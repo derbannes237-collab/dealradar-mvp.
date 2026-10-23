@@ -51,7 +51,7 @@ with st.sidebar:
     st.markdown("### 🧭 Navigation")
     page = st.radio(
         "Menu principal",
-        ["🏠  Tableau de bord", "➕  Ajouter des annonces", "🎯  Opportunités", "⚙️  Paramètres", "💡  Guide & aide"],
+        ["🏠  Tableau de bord", "➕  Ajouter des annonces", "🎯  Opportunités", "🔎  Recherche automatique", "⚙️  Paramètres", "💡  Guide & aide"],
         label_visibility="collapsed",
         key="dr_navigation"
     )
@@ -75,8 +75,104 @@ with st.sidebar:
     st.markdown("---")
     st.caption("🟢 Interface MVP • Sources automatiques en préparation")
 
-if page in ["🏠  Tableau de bord", "➕  Ajouter des annonces"]:
-    st.subheader("1. Ajouter des annonces")
+if page == "🔎  Recherche automatique":
+    from urllib.parse import quote_plus
+    import base64
+    import json
+    import urllib.parse
+    import urllib.request
+    import urllib.error
+
+    st.markdown("## 🔎 Chasse aux bonnes affaires")
+    st.write("Recherche par mot-clé et comparaison multi-plateformes.")
+    with st.form("dr_search_form"):
+        search_term = st.text_input("Quel produit recherches-tu ?", placeholder="Ex. : Sony A7 III, iPhone 15, PS5")
+        search_max_price = st.number_input("Prix d'achat maximal (€)", min_value=1.0, value=float(max_buy), step=25.0)
+        search_limit = st.select_slider("Nombre de résultats eBay", options=[5, 10, 20, 50], value=20)
+        run_search = st.form_submit_button("🚀 Lancer la recherche", use_container_width=True)
+
+    if run_search and not search_term.strip():
+        st.warning("Saisis un nom de produit pour lancer la recherche.")
+    if run_search and search_term.strip():
+        term = search_term.strip()
+        st.markdown("### 🌐 Plateformes à explorer")
+        link_cols = st.columns(3)
+        external_searches = [
+            ("🟠 Leboncoin", "https://www.leboncoin.fr/recherche?text=" + quote_plus(term)),
+            ("🟡 Amazon", "https://www.amazon.fr/s?k=" + quote_plus(term)),
+            ("🔵 eBay", "https://www.ebay.fr/sch/i.html?_nkw=" + quote_plus(term) + "&_udhi=" + quote_plus(str(int(search_max_price)))),
+            ("🟢 Back Market", "https://www.backmarket.fr/fr-fr/search?q=" + quote_plus(term)),
+            ("🔴 Cdiscount", "https://www.cdiscount.com/search/10/" + quote_plus(term) + ".html"),
+        ]
+        for i, (label, url) in enumerate(external_searches):
+            with link_cols[i % 3]:
+                st.link_button(label, url, use_container_width=True)
+
+        st.markdown("### ⚡ Résultats eBay dans DealRadar")
+        try:
+            ebay_client_id = st.secrets.get("EBAY_CLIENT_ID", "")
+            ebay_client_secret = st.secrets.get("EBAY_CLIENT_SECRET", "")
+        except Exception:
+            ebay_client_id, ebay_client_secret = "", ""
+
+        if not ebay_client_id or not ebay_client_secret:
+            st.info("Pour afficher les annonces eBay directement ici, il faut configurer les clés API dans les secrets du déploiement. Les recherches sur les sites restent accessibles via les boutons.")
+            st.markdown("[Ouvrir le guide officiel eBay pour les clés API](https://developer.ebay.com/api-docs/static/oauth-credentials.html)")
+        else:
+            try:
+                auth = base64.b64encode(f"{ebay_client_id}:{ebay_client_secret}".encode()).decode()
+                token_req = urllib.request.Request(
+                    "https://api.ebay.com/identity/v1/oauth2/token",
+                    data=urllib.parse.urlencode({"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"}).encode(),
+                    headers={"Authorization": "Basic " + auth, "Content-Type": "application/x-www-form-urlencoded"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(token_req, timeout=20) as response:
+                    token_data = json.loads(response.read().decode())
+                query = urllib.parse.urlencode({
+                    "q": term,
+                    "limit": int(search_limit),
+                    "filter": f"price:[0..{search_max_price}],priceCurrency:EUR"
+                })
+                api_req = urllib.request.Request(
+                    "https://api.ebay.com/buy/browse/v1/item_summary/search?" + query,
+                    headers={"Authorization": "Bearer " + token_data["access_token"], "X-EBAY-C-MARKETPLACE-ID": "EBAY_FR", "Accept": "application/json"}
+                )
+                with urllib.request.urlopen(api_req, timeout=25) as response:
+                    payload = json.loads(response.read().decode())
+                items = payload.get("itemSummaries", [])
+                if not items:
+                    st.warning("Aucun résultat eBay trouvé avec ces critères.")
+                else:
+                    st.success(f"{len(items)} annonces eBay récupérées.")
+                    for item in items:
+                        title = item.get("title", "Annonce eBay")
+                        price_info = item.get("price", {})
+                        price = price_info.get("value", "—")
+                        currency = price_info.get("currency", "EUR")
+                        item_url = item.get("itemWebUrl", "https://www.ebay.fr")
+                        image_url = item.get("image", {}).get("imageUrl")
+                        with st.container(border=True):
+                            item_cols = st.columns([1, 3])
+                            with item_cols[0]:
+                                if image_url:
+                                    st.image(image_url, use_container_width=True)
+                            with item_cols[1]:
+                                st.markdown("**" + title + "**")
+                                st.markdown(f"### {price} {currency}")
+                                st.link_button("Voir l'annonce ↗", item_url)
+                                st.caption("Frais de livraison éventuels à vérifier sur l'annonce.")
+            except urllib.error.HTTPError as exc:
+                st.error(f"eBay a refusé la requête (HTTP {exc.code}). Vérifie l'accès Browse API et les clés Production.")
+            except Exception as exc:
+                st.error("La recherche eBay n'a pas abouti. Vérifie les clés et l'accès API dans les paramètres de déploiement.")
+                st.caption(f"Détail technique : {type(exc).__name__}")
+
+    st.markdown("---")
+    st.caption("Leboncoin, Amazon, Back Market et Cdiscount sont pour l'instant ouverts via leurs pages de recherche. Leur collecte intégrée nécessite des API autorisées ou des connecteurs tiers compatibles. Aucun résultat fictif n'est affiché.")
+    st.stop()
+
+st.subheader("1. Ajouter des annonces")
 col_demo, col_upload = st.columns([1, 1])
 with col_demo:
     st.markdown("**Données de démonstration**")
