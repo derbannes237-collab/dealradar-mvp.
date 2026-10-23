@@ -5,11 +5,37 @@ from datetime import datetime, timezone
 from dealradar.engine import enrich_listing, validate_listing, DEFAULT_SETTINGS
 from dealradar.storage import init_db, save_listings, load_listings, save_settings, load_settings
 
-st.set_page_config(page_title="DealRadar Électronique", page_icon="📡", layout="wide")
+st.set_page_config(page_title="DealRadar — chasse aux bonnes affaires", page_icon="📡", layout="wide")
+st.markdown("""
+<style>
+.stApp { background: linear-gradient(180deg,#f1f6ff 0%,#ffffff 48%,#f7faff 100%); }
+.block-container { padding-top:1.3rem; padding-bottom:3rem; max-width:1240px; }
+.dr-hero { background:linear-gradient(120deg,#071b49 0%,#104bd0 68%,#0bb9e8 100%); color:white; padding:1.55rem 1.6rem; border-radius:24px; margin-bottom:1.15rem; box-shadow:0 12px 32px rgba(20,87,232,.18); }
+.dr-brand { font-size:clamp(2rem,5vw,3.1rem); font-weight:850; letter-spacing:-1.5px; line-height:1.1; }
+.dr-brand span { color:#35d5ff; }
+.dr-tagline { font-size:1rem; opacity:.94; margin-top:.45rem; }
+.dr-pill { display:inline-block; background:#ffca3a; color:#17264b; padding:.32rem .75rem; border-radius:999px; font-weight:800; font-size:.78rem; margin-top:.85rem; }
+div[data-testid="stMetric"] { background:white; border:1px solid #e0eaff; border-radius:18px; padding:1rem 1.1rem; box-shadow:0 5px 18px rgba(18,54,120,.06); }
+div[data-testid="stMetricLabel"] { color:#52658a; font-weight:650; }
+div[data-testid="stMetricValue"] { color:#104bd0; font-weight:850; }
+.stButton > button, .stDownloadButton > button { border-radius:13px; border:0; background:linear-gradient(110deg,#1457e8,#08aeea); color:white; font-weight:750; min-height:2.7rem; box-shadow:0 5px 13px rgba(20,87,232,.15); }
+.stButton > button:hover { border:0; color:white; filter:brightness(1.06); transform:translateY(-1px); }
+div[data-testid="stFileUploader"] section { border:2px dashed #b8cdfc; border-radius:16px; background:#f8fbff; }
+div[data-testid="stDataFrame"] { border:1px solid #e0eaff; border-radius:14px; overflow:hidden; }
+div[data-testid="stExpander"] { border:1px solid #e0eaff; border-radius:14px; background:white; }
+h2,h3 { color:#102b62; letter-spacing:-.3px; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#eef5ff,#ffffff); }
+@media(max-width:700px) { .block-container{padding-left:.8rem;padding-right:.8rem;} .dr-hero{padding:1.2rem;border-radius:18px;} }
+</style>
+<div class="dr-hero">
+  <div class="dr-brand">📡 Deal<span>Radar</span> 🎁</div>
+  <div class="dr-tagline">On traque les bonnes affaires. Tu gardes les meilleurs deals !</div>
+  <div class="dr-pill">⚡ CHASSE AUX OPPORTUNITÉS</div>
+</div>
+""", unsafe_allow_html=True)
 init_db()
 
-st.title("📡 DealRadar Électronique")
-st.caption("MVP — moteur de rentabilité et tableau de bord. Les données de démonstration sont explicitement signalées.")
+st.caption("Ton tableau de chasse aux bonnes affaires : estime la marge, filtre les opportunités et garde le cap sur ton budget.")
 
 settings = load_settings()
 with st.sidebar:
