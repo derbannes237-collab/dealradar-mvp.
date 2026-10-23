@@ -94,7 +94,11 @@ if page == "🔎  Recherche automatique":
     if run_search and not search_term.strip():
         st.warning("Saisis un nom de produit pour lancer la recherche.")
     if run_search and search_term.strip():
-        term = search_term.strip()
+        st.session_state["dr_active_search_term"] = search_term.strip()
+
+    active_term = st.session_state.get("dr_active_search_term", "")
+    if active_term:
+        term = active_term
         st.markdown("### 🌐 Plateformes à explorer")
         link_cols = st.columns(3)
         external_searches = [
