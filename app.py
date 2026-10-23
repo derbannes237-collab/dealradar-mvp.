@@ -108,6 +108,36 @@ if page == "🔎  Recherche automatique":
             with link_cols[i % 3]:
                 st.link_button(label, url, use_container_width=True)
 
+        st.markdown("### 🟠 Analyse rapide d’une annonce Leboncoin")
+        st.caption("Ouvre une recherche Leboncoin ci-dessus, choisis une annonce réelle, puis renseigne ses chiffres ici. DealRadar ne collecte pas automatiquement les annonces Leboncoin.")
+        with st.form("dr_leboncoin_profit_form"):
+            lbc_url = st.text_input("Lien de l’annonce (facultatif)", placeholder="https://www.leboncoin.fr/...")
+            lbc_buy = st.number_input("Prix demandé (€)", min_value=0.0, value=100.0, step=10.0)
+            lbc_buy_fees = st.number_input("Frais à l’achat / livraison (€)", min_value=0.0, value=5.0, step=1.0)
+            lbc_repair = st.number_input("Réparation ou remise en état (€)", min_value=0.0, value=0.0, step=5.0)
+            lbc_resale = st.number_input("Prix de revente estimé (€)", min_value=0.0, value=150.0, step=10.0)
+            lbc_sell_fees = st.number_input("Frais de vente estimés (€)", min_value=0.0, value=15.0, step=1.0)
+            lbc_shipping = st.number_input("Autres frais / expédition (€)", min_value=0.0, value=5.0, step=1.0)
+            lbc_target_roi = st.number_input("ROI net minimum souhaité (%)", min_value=0.0, value=float(min_roi), step=5.0)
+            lbc_calculate = st.form_submit_button("🧮 Calculer la rentabilité", use_container_width=True)
+        if lbc_calculate:
+            lbc_total_cost = lbc_buy + lbc_buy_fees + lbc_repair + lbc_shipping
+            lbc_net_profit = lbc_resale - lbc_total_cost - lbc_sell_fees
+            lbc_roi = (lbc_net_profit / lbc_total_cost * 100) if lbc_total_cost > 0 else 0.0
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Coût total", f"{lbc_total_cost:.2f} €")
+            m2.metric("Gain net estimé", f"{lbc_net_profit:.2f} €")
+            m3.metric("ROI net estimé", f"{lbc_roi:.1f} %")
+            if lbc_net_profit <= 0:
+                st.error("Cette opération semble déficitaire avec les hypothèses saisies.")
+            elif lbc_roi >= lbc_target_roi:
+                st.success("Cette annonce atteint ton objectif de ROI estimé. Vérifie l’état, l’authenticité et le prix de revente avant tout achat.")
+            else:
+                st.warning("Le gain estimé est positif, mais le ROI reste inférieur à ton objectif.")
+            if lbc_url.strip().startswith("https://www.leboncoin.fr/") or lbc_url.strip().startswith("https://leboncoin.fr/"):
+                st.link_button("🔗 Revoir l’annonce Leboncoin", lbc_url.strip())
+            st.caption("Estimation indicative avant fiscalité, cotisations, retours, litiges et temps passé. Le prix de revente n’est pas vérifié automatiquement.")
+        
         st.markdown("### ⚡ Résultats eBay dans DealRadar")
         try:
             ebay_client_id = st.secrets.get("EBAY_CLIENT_ID", "")
