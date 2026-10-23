@@ -1,0 +1,2 @@
+listing_id,product_name,category,platform,condition,model_age_years,buy_price,buy_fees,repair_cost,resale_price,sell_fees,outbound_shipping,data_origin,listing_url,notes
+EXEMPLE-REAL-001,Remplacer par un produit vérifié,Informatique,Source autorisée,Occasion,2,200,8,0,350,35,10,IMPORTED,,Ne pas utiliser avant vérification du marché
