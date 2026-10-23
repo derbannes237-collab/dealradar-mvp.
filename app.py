@@ -8,6 +8,12 @@ from dealradar.storage import init_db, save_listings, load_listings, save_settin
 st.set_page_config(page_title="DealRadar — chasse aux bonnes affaires", page_icon="📡", layout="wide")
 st.markdown("""
 <style>
+.dr-sidebrand { background:linear-gradient(120deg,#071b49,#1457e8,#0bb9e8); color:white; padding:1rem; border-radius:16px; margin:.2rem 0 1rem; }
+.dr-sidebrand b { font-size:1.35rem; letter-spacing:-.5px; }
+.dr-sidebrand b span { color:#35d5ff; }
+.dr-sidebrand small { display:block; font-size:.62rem; letter-spacing:1px; margin-top:.3rem; opacity:.9; }
+[data-testid="stSidebar"] [data-testid="stRadio"] label { background:rgba(255,255,255,.78); border:1px solid #dce8ff; padding:.55rem .65rem; border-radius:12px; margin:.25rem 0; }
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) { background:#e0ebff; border-color:#7da7ff; color:#104bd0; font-weight:800; }
 .stApp { background: linear-gradient(180deg,#f1f6ff 0%,#ffffff 48%,#f7faff 100%); }
 .block-container { padding-top:1.3rem; padding-bottom:3rem; max-width:1240px; }
 .dr-hero { background:linear-gradient(120deg,#071b49 0%,#104bd0 68%,#0bb9e8 100%); color:white; padding:1.55rem 1.6rem; border-radius:24px; margin-bottom:1.15rem; box-shadow:0 12px 32px rgba(20,87,232,.18); }
@@ -39,19 +45,38 @@ st.caption("Ton tableau de chasse aux bonnes affaires : estime la marge, filtre 
 
 settings = load_settings()
 with st.sidebar:
-    st.header("Paramètres")
-    capital = st.number_input("Capital disponible (€)", min_value=0.0, value=float(settings.get("capital", 1000)), step=100.0)
-    max_buy = st.number_input("Achat maximal par article (€)", min_value=1.0, value=float(settings.get("max_buy", 500)), step=25.0)
-    min_roi = st.number_input("ROI net minimal (%)", min_value=0.0, value=float(settings.get("min_roi", 40)), step=5.0)
-    max_age = st.number_input("Âge maximal du modèle (années)", min_value=1, max_value=20, value=int(settings.get("max_age", 4)), step=1)
-    saved = st.button("Enregistrer les paramètres", use_container_width=True)
-    if saved:
-        save_settings({"capital": capital, "max_buy": max_buy, "min_roi": min_roi, "max_age": max_age})
-        st.success("Paramètres enregistrés.")
-    st.divider()
-    st.info("Les connecteurs de plateformes ne sont pas encore activés. Aucune annonce réelle n'est récupérée automatiquement par cette version.")
+    st.markdown("""
+    <div class="dr-sidebrand">📡 <b>Deal<span>Radar</span></b><small>TON COACH DES BONNES AFFAIRES</small></div>
+    """, unsafe_allow_html=True)
+    st.markdown("### 🧭 Navigation")
+    page = st.radio(
+        "Menu principal",
+        ["🏠  Tableau de bord", "➕  Ajouter des annonces", "🎯  Opportunités", "⚙️  Paramètres", "💡  Guide & aide"],
+        label_visibility="collapsed",
+        key="dr_navigation"
+    )
+    st.markdown("---")
+    st.markdown("#### 🎯 Tes critères")
+    if page == "⚙️  Paramètres":
+        capital = st.number_input("Capital disponible (€)", min_value=0.0, value=float(settings.get("capital", 1000)), step=100.0)
+        max_buy = st.number_input("Achat maximal par article (€)", min_value=1.0, value=float(settings.get("max_buy", 500)), step=25.0)
+        min_roi = st.number_input("ROI net minimal (%)", min_value=0.0, value=float(settings.get("min_roi", 40)), step=5.0)
+        max_age = st.number_input("Âge maximal du modèle (années)", min_value=1, max_value=20, value=int(settings.get("max_age", 4)), step=1)
+        if st.button("💾 Enregistrer les paramètres", use_container_width=True):
+            save_settings({"capital": capital, "max_buy": max_buy, "min_roi": min_roi, "max_age": max_age})
+            st.success("Paramètres enregistrés.")
+    else:
+        capital = float(settings.get("capital", 1000))
+        max_buy = float(settings.get("max_buy", 500))
+        min_roi = float(settings.get("min_roi", 40))
+        max_age = int(settings.get("max_age", 4))
+        st.caption(f"Capital : **{capital:,.0f} €**".replace(",", " "))
+        st.caption(f"ROI cible : **{min_roi:.0f} %**")
+    st.markdown("---")
+    st.caption("🟢 Interface MVP • Sources automatiques en préparation")
 
-st.subheader("1. Ajouter des annonces")
+if page in ["🏠  Tableau de bord", "➕  Ajouter des annonces"]:
+    st.subheader("1. Ajouter des annonces")
 col_demo, col_upload = st.columns([1, 1])
 with col_demo:
     st.markdown("**Données de démonstration**")
