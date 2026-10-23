@@ -1,0 +1,1 @@
+"""DealRadar application package."""
