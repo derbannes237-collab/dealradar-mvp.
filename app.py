@@ -181,6 +181,53 @@ if page == "🔎  Recherche automatique":
                     st.warning("Aucun résultat eBay trouvé avec ces critères.")
                 else:
                     st.success(f"{len(items)} annonces eBay récupérées.")
+                    st.markdown("### 🧮 Calcul automatique de rentabilité eBay")
+                    labels = [f"{x.get('title', 'Annonce')[:85]} — {x.get('price', {}).get('value', '—')} {x.get('price', {}).get('currency', 'EUR')}" for x in items]
+                    selected_index = st.selectbox("Choisir l'annonce à analyser", range(len(items)), format_func=lambda i: labels[i])
+                    selected_item = items[selected_index]
+                    selected_price = float(selected_item.get("price", {}).get("value", 0) or 0)
+                    selected_shipping = 0.0
+                    for option in selected_item.get("shippingOptions", []):
+                        try:
+                            selected_shipping = float(option.get("shippingCost", {}).get("value", 0) or 0)
+                            break
+                        except (TypeError, ValueError):
+                            pass
+                    observed_prices = []
+                    for result_item in items:
+                        try:
+                            if result_item.get("price", {}).get("currency", "EUR") == "EUR":
+                                observed_prices.append(float(result_item.get("price", {}).get("value", 0)))
+                        except (TypeError, ValueError):
+                            pass
+                    resale_reference = sorted(observed_prices)[len(observed_prices)//2] if observed_prices else selected_price
+                    st.caption("Les champs ci-dessous sont préremplis depuis l'annonce choisie et les résultats eBay. La médiane des prix affichés est un repère indicatif, pas un prix de vente réellement constaté.")
+                    with st.form("dr_ebay_profit_form"):
+                        st.text_input("Annonce sélectionnée", value=selected_item.get("title", ""), disabled=True)
+                        eb_buy = st.number_input("Prix d'achat (€)", min_value=0.0, value=selected_price, step=5.0, key="dr_eb_buy")
+                        eb_buy_fees = st.number_input("Frais d'achat / livraison (€)", min_value=0.0, value=selected_shipping, step=1.0, key="dr_eb_buy_fees")
+                        eb_repair = st.number_input("Réparation / remise en état (€)", min_value=0.0, value=0.0, step=5.0, key="dr_eb_repair")
+                        eb_resale = st.number_input("Prix de revente indicatif (€)", min_value=0.0, value=float(resale_reference), step=5.0, key="dr_eb_resale")
+                        eb_sell_pct = st.number_input("Frais de vente estimés (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0, key="dr_eb_sell_pct")
+                        eb_out_shipping = st.number_input("Expédition vers l'acheteur (€)", min_value=0.0, value=5.0, step=1.0, key="dr_eb_out_shipping")
+                        eb_target = st.number_input("ROI net minimum souhaité (%)", min_value=0.0, value=float(min_roi), step=5.0, key="dr_eb_target")
+                        eb_calc = st.form_submit_button("Calculer la rentabilité", use_container_width=True)
+                    if eb_calc:
+                        eb_total = eb_buy + eb_buy_fees + eb_repair
+                        eb_sell_fees = eb_resale * eb_sell_pct / 100
+                        eb_profit = eb_resale - eb_total - eb_sell_fees - eb_out_shipping
+                        eb_roi = eb_profit / eb_total * 100 if eb_total > 0 else 0.0
+                        a, b, c = st.columns(3)
+                        a.metric("Coût d'achat total", f"{eb_total:.2f} €")
+                        b.metric("Gain net estimé", f"{eb_profit:.2f} €")
+                        c.metric("ROI net estimé", f"{eb_roi:.1f} %")
+                        if eb_profit <= 0:
+                            st.error("Opération estimée déficitaire.")
+                        elif eb_roi >= eb_target:
+                            st.success("Objectif de ROI atteint sur la base de ces hypothèses. Vérifie l'état, la demande et les frais réels avant achat.")
+                        else:
+                            st.warning("Gain estimé positif, mais ROI inférieur à l'objectif.")
+                        st.link_button("Ouvrir l'annonce choisie", selected_item.get("itemWebUrl", "https://www.ebay.fr"))
                     for item in items:
                         title = item.get("title", "Annonce eBay")
                         price_info = item.get("price", {})
