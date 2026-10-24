@@ -107,6 +107,8 @@ if page == "🔎  Recherche automatique":
             ("🔵 eBay", "https://www.ebay.fr/sch/i.html?_nkw=" + quote_plus(term) + "&_udhi=" + quote_plus(str(int(search_max_price)))),
             ("🟢 Back Market", "https://www.backmarket.fr/fr-fr/search?q=" + quote_plus(term)),
             ("🔴 Cdiscount", "https://www.cdiscount.com/search/10/" + quote_plus(term) + ".html"),
+            ("🔵 Facebook Marketplace", "https://www.facebook.com/marketplace/search/?query=" + quote_plus(term)),
+            ("🟣 Vinted", "https://www.vinted.fr/catalog?search_text=" + quote_plus(term)),
         ]
         for i, (label, url) in enumerate(external_searches):
             with link_cols[i % 3]:
@@ -203,7 +205,7 @@ if page == "🔎  Recherche automatique":
                 st.caption(f"Détail technique : {type(exc).__name__}")
 
     st.markdown("---")
-    st.caption("Leboncoin, Amazon, Back Market et Cdiscount sont pour l'instant ouverts via leurs pages de recherche. Leur collecte intégrée nécessite des API autorisées ou des connecteurs tiers compatibles. Aucun résultat fictif n'est affiché.")
+    st.caption("Leboncoin, Amazon, eBay, Back Market, Cdiscount, Facebook Marketplace et Vinted sont proposés via leurs pages de recherche. Seule la recherche eBay peut afficher des annonces directement dans DealRadar si les clés API sont configurées. La collecte intégrée des autres plateformes nécessite un accès autorisé ou un connecteur compatible. Aucun résultat fictif n'est affiché.")
     st.stop()
 
 st.subheader("1. Ajouter des annonces")
